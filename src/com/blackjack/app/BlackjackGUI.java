@@ -20,7 +20,7 @@ public class BlackjackGUI extends JFrame {
     private Deck deck;
     private Player player;
     private Dealer dealer;
-    // GUI部品
+    // CUI部品
 /*
     private JTextArea playerArea;
     private JTextArea dealerArea;
@@ -49,17 +49,6 @@ public class BlackjackGUI extends JFrame {
         setSize(600, 500); // 少し広めに調整
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
-/*
-        //ゲーム初期化
-        deck = new Deck();
-        player = new Player();
-        dealer = new Dealer();
-        // 初期カード配布　プレイヤー・ディーラーに2枚ずつカード配布
-        player.addCard(deck.drawCard());
-        player.addCard(deck.drawCard());
-        dealer.addCard(deck.drawCard());
-        dealer.addCard(deck.drawCard());
-*/
 /*
         // ディーラーの表示エリア
         dealerArea = new JTextArea(3, 30); //手札を表示
@@ -125,7 +114,6 @@ public class BlackjackGUI extends JFrame {
         // ステータスラベル
         //SwingConstants.CENTER → ラベルの中の文字を中央揃えにする。
         statusLabel = new JLabel("選んでください：ヒット or スタンド", SwingConstants.CENTER);
-        System.out.println("コンストラクタ内の statusLabel ハッシュコード: " + statusLabel.hashCode());
         // ボタンとラベルを1つの下部パネルにまとめる
         bottomPanel.add(buttonPanel, BorderLayout.CENTER); //buttonPanel（ボタン2つ）を bottomPanel の中央に配置。
         bottomPanel.add(statusLabel, BorderLayout.SOUTH); //statusLabel（メッセージ）を bottomPanel の下部（SOUTH）に配置。
@@ -145,8 +133,6 @@ public class BlackjackGUI extends JFrame {
         
         // 初期カードを配る
         initializeGame();
-        
-        updateUI(false);
     }
     
     private void initializeGame() {
@@ -164,19 +150,30 @@ public class BlackjackGUI extends JFrame {
         dealer.addCard(deck.drawCard());
         dealer.addCard(deck.drawCard());
         
-     // ブラックジャック判定（最初の2枚で21点かつ2枚のみ）
+        /*updateUI(false); // 新しいカードを表示　ディーラーの2枚目のカードを隠す*/
+        hitButton.setEnabled(true);
+        standButton.setEnabled(true);
+        splitButton.setEnabled(false);
+        replayButton.setEnabled(false); // 再プレイボタンを無効にする
+        doubleDownButton.setEnabled(player.getHand().size() == 2);
+        statusLabel.setText("選んでください：ヒット or スタンド");
+        
+        // スプリットボタンの有効/無効判定を追加（再プレイ時にも必要）
+        if (player.getHand().size() == 2 && player.getHand().get(0).getRank().equals(player.getHand().get(1).getRank())) {
+        	//プレイヤーの手札が2枚（最初の状態）　 1枚目と2枚目のランク（A〜Kや数字）が同じなら、スプリット可能。
+            splitButton.setEnabled(true);
+        } else {
+            splitButton.setEnabled(false);
+        }
+        
+        // ブラックジャック判定（最初の2枚で21点かつ2枚のみ）
         boolean playerBJ = (player.getHandValue() == 21 && player.getHand().size() == 2);
         boolean dealerBJ = (dealer.getHandValue() == 21 && dealer.getHand().size() == 2);
-
-        /*System.out.println(player.getHandValue());*/
-        updateUI(false); // 最初のUI更新
         
         if (playerBJ || dealerBJ) {
-        	/*updateUI(true); //ディーラーの手札も全部表示
-        	JPanel playerCardsPanel = (JPanel) playerPanel.getComponent(0);
-        	playerCardsPanel.revalidate();
-        	playerCardsPanel.repaint();*/
             concludeGame(); //勝敗処理メソッド（後述）
+        } else {
+        	updateUI(false);
         }
     }
 /*
@@ -209,15 +206,7 @@ public class BlackjackGUI extends JFrame {
         for (Card card : handToShow) {
             playerCardsPanel.add(createCardImageLabel(card)); //createCardImageLabel(card) でカード画像を JLabel にして、画面に追加している。
         }
-/*
-        for (Card card : player.getHand()) { //player.getHand() は、プレイヤーの手札（ArrayList<Card>）を返す。
-        	playerCardsPanel.add(createCardImageLabel(card)); //createCardImageLabel(card) で画像を生成し、playerPanel に追加！
-        }
 
-        for (Card card : dealer.getHand()) {
-        	dealerCardsPanel.add(createCardImageLabel(card));
-        }
-*/
         //ディーラーのカードを表示（1枚だけ表にする or 全部表にする）
         for (int i = 0; i < dealer.getHand().size(); i++) { //ディーラーの手札（dealer.getHand()）は List<Card> 型。
             //ここで分岐しているのは、「カードを表向きで表示するか？」という判断。
@@ -233,8 +222,6 @@ public class BlackjackGUI extends JFrame {
         int value = playingSplitHand ? splitPlayer.getHandValue() : player.getHandValue();
         //playingSplitHand（スプリット中かどうか）によって、プレイヤーの通常の手札の合計値 or スプリット用手札の合計値を選んで表示。
         playerValueLabel.setText("合計: " + value);
-        //playerValueLabel.setText("合計: " + player.getHandValue());
-        //dealerValueLabel.setText("合計: " + dealer.getHandValue());
         dealerValueLabel.setText("合計: " + (showDealerCards ? dealer.getHandValue() : "？"));
         //ディーラーの表示は、showDealerCards が false なら "？" にして隠す。
 
@@ -251,7 +238,7 @@ public class BlackjackGUI extends JFrame {
             } else {
                 splitButton.setEnabled(false);
             }
-        
+        //ダブルダウンボタンの有効化/無効化
         if (player.getHand().size() == 2 && isFirstTurn) {
             doubleDownButton.setEnabled(true);
         } else {
@@ -285,7 +272,6 @@ public class BlackjackGUI extends JFrame {
         try { //try と catch は、「例外処理（エラー対策）」のための仕組みです。
             // カード画像ファイル名を作成
             String cardName = card.getRank() + "_of_" + card.getSuit() + ".png";
-            //String path = "/images/" + cardName;
    
             // カード画像を読み込む
             //getClass().getResource(...) は、リソースフォルダの画像ファイルを探してくれるメソッドです。
@@ -298,11 +284,7 @@ public class BlackjackGUI extends JFrame {
             ImageIcon scaledIcon = new ImageIcon(scaledImage);
             
             return new JLabel(scaledIcon); //JLabel に画像を埋め込んで返します。        
-/*
-            // 画像をJLabelに設定
-            JLabel label = new JLabel(cardImage);
-            return label;
-*/
+
         } catch (Exception e) { //こういう構文
             e.printStackTrace(); //// エラー内容をコンソールに表示するという意味
             return new JLabel("カード画像がありません");
@@ -359,15 +341,8 @@ public class BlackjackGUI extends JFrame {
                 }
             }
         }
-/*
-    	player.addCard(deck.drawCard()); //山札 (deck) からカードを1枚引いて、プレイヤーの手札 (player) に追加する。
-        updateUI(false); //画面（テキストエリア）に現在の手札情報を更新して表示する。　ディーラー隠す
-        if (player.getHandValue() > 21) {
-            statusLabel.setText("バスト！あなたの負け！");
-            endGame();
-        }
-*/
     }
+    
     // ボタン処理：スタンド（勝敗判定）
     private void stand() {
     	if (isSplit && !playingSplitHand) { //isSplit はプレイヤーがスプリットしているかどうか。
@@ -389,20 +364,10 @@ public class BlackjackGUI extends JFrame {
         //勝敗判定の準備
         String result = "";
         
-        /*int pVal = player.getHandValue();*/
         //ディーラーの点数と、プレイヤー（通常手札）の点数を取得。
         int dVal = dealer.getHandValue();
         int p1 = player.getHandValue();
         int p2 = isSplit ? splitPlayer.getHandValue() : -1; //スプリットしていれば、スプリット側の手札の点数も取得。
-/*
-        if (dVal > 21 || pVal > dVal) {
-            statusLabel.setText("あなたの勝ち！");
-        } else if (pVal == dVal) {
-            statusLabel.setText("引き分け！");
-        } else {
-            statusLabel.setText("ディーラーの勝ち！");
-        }
-*/
 
         //勝敗の判定
         if (!isSplit) {
@@ -427,53 +392,25 @@ public class BlackjackGUI extends JFrame {
     
     private void concludeGame() {
     	System.out.println("concludeGame() が呼び出されました");
-        hitButton.setEnabled(false);
-        standButton.setEnabled(false);
-        splitButton.setEnabled(false);
-        replayButton.setEnabled(true);
 
         boolean playerBJ = (player.getHandValue() == 21 && player.getHand().size() == 2);
         boolean dealerBJ = (dealer.getHandValue() == 21 && dealer.getHand().size() == 2);
-        System.out.println("playerBJ: " + playerBJ);
-        System.out.println("dealerBJ: " + dealerBJ);
-        System.out.println("concludeGame() 内の statusLabel ハッシュコード: " + statusLabel.hashCode());
-        System.out.println("statusLabel の可視性: " + statusLabel.isVisible());
-        System.out.println("statusLabel の位置: " + statusLabel.getLocation());
-        System.out.println("statusLabel のサイズ: " + statusLabel.getSize());
 
         if (playerBJ && dealerBJ) {
         	System.out.println("両者ブラックジャックの処理を実行します。");
             statusLabel.setText("引き分け（両者ブラックジャック）！");
             statusLabel.repaint();
         } else if (playerBJ) {
-        	 System.out.println("プレイヤーブラックジャックの処理を実行します。");
+        	System.out.println("プレイヤーブラックジャックの処理を実行します。");
             statusLabel.setText("あなたのブラックジャック！勝利！");
             statusLabel.repaint();
-            hitButton.setEnabled(false); // プレイヤーブラックジャックなのでヒット不可
-            standButton.setEnabled(false); // プレイヤーブラックジャックなのでスタンド不要
         } else if (dealerBJ) {
         	System.out.println("ディーラーブラックジャックの処理を実行します。");
             statusLabel.setText("ディーラーのブラックジャック。あなたの負け！");
             statusLabel.repaint();
-        } else {
-        	System.out.println("ブラックジャックではない通常の処理を実行します。");
-        	statusLabel.repaint();
-            // ブラックジャックでない通常の勝敗判定は、スタンド後に実行されるため、ここでは何もしません。
-            // あるいは、初期配布でブラックジャックが発生しなかった場合のメッセージを設定することもできます。
-            statusLabel.setText("ヒットまたはスタンドを選択してください。");
-            hitButton.setEnabled(true);
-            standButton.setEnabled(true);
-            // スプリットボタンの有効/無効判定をここで行うことも可能です。
-            if (player.getHand().size() == 2 && player.getHand().get(0).getRank().equals(player.getHand().get(1).getRank())) {
-                splitButton.setEnabled(true);
-            }
-        }
-        System.out.println("statusLabel のテキストを設定しました: " + statusLabel.getText());
-        hitButton.revalidate();
-        hitButton.repaint();
-        revalidate();
-        repaint();
+        } 
         updateUI(true); // ディーラーの手札を公開
+        endGame();
     }
     
     // 勝敗決定後の処理
@@ -488,21 +425,6 @@ public class BlackjackGUI extends JFrame {
     //ゲームを再スタートするためのメソッド。
     private void replay() {
         initializeGame(); // ゲームをリセット
-        updateUI(false); // 新しいカードを表示　ディーラーの2枚目のカードを隠す
-        hitButton.setEnabled(true);
-        standButton.setEnabled(true);
-        splitButton.setEnabled(false);
-        replayButton.setEnabled(false); // 再プレイボタンを無効にする
-        doubleDownButton.setEnabled(player.getHand().size() == 2);
-        statusLabel.setText("選んでください：ヒット or スタンド");
-        
-        // スプリットボタンの有効/無効判定を追加（再プレイ時にも必要）
-        if (player.getHand().size() == 2 && player.getHand().get(0).getRank().equals(player.getHand().get(1).getRank())) {
-        	//プレイヤーの手札が2枚（最初の状態）　 1枚目と2枚目のランク（A〜Kや数字）が同じなら、スプリット可能。
-            splitButton.setEnabled(true);
-        } else {
-            splitButton.setEnabled(false);
-        }
     }
     
     //スプリット処理を行うメソッド
@@ -528,7 +450,6 @@ public class BlackjackGUI extends JFrame {
         // 1枚だけ引く
         player.addCard(deck.drawCard());
         updateUI(false);
-
         // バストチェック
         if (player.getHandValue() > 21) {
             statusLabel.setText("バスト！あなたの負け！");
@@ -537,7 +458,6 @@ public class BlackjackGUI extends JFrame {
             // バストしてなければそのままスタンド処理
             stand();
         }
-
         // ボタン無効化（ダブルダウンは1回だけ）
         doubleDownButton.setEnabled(false);
     }
