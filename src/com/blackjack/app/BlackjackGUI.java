@@ -41,6 +41,7 @@ public class BlackjackGUI extends JFrame {
     private boolean playingSplitHand = false;
     
     private boolean isFirstTurn = true;
+    private boolean splitIsFirstTurn = true; // ← スプリット後用のfirstTurnフラグ
     
     // コンストラクタでウィンドウとゲームの準備
     public BlackjackGUI() {
@@ -113,7 +114,7 @@ public class BlackjackGUI extends JFrame {
         
         // ステータスラベル
         //SwingConstants.CENTER → ラベルの中の文字を中央揃えにする。
-        statusLabel = new JLabel("選んでください：ヒット or スタンド", SwingConstants.CENTER);
+        statusLabel = new JLabel("選んでください", SwingConstants.CENTER);
         // ボタンとラベルを1つの下部パネルにまとめる
         bottomPanel.add(buttonPanel, BorderLayout.CENTER); //buttonPanel（ボタン2つ）を bottomPanel の中央に配置。
         bottomPanel.add(statusLabel, BorderLayout.SOUTH); //statusLabel（メッセージ）を bottomPanel の下部（SOUTH）に配置。
@@ -156,7 +157,7 @@ public class BlackjackGUI extends JFrame {
         splitButton.setEnabled(false);
         replayButton.setEnabled(false); // 再プレイボタンを無効にする
         doubleDownButton.setEnabled(player.getHand().size() == 2);
-        statusLabel.setText("選んでください：ヒット or スタンド");
+        statusLabel.setText("選んでください");
         
         // スプリットボタンの有効/無効判定を追加（再プレイ時にも必要）
         if (player.getHand().size() == 2 && player.getHand().get(0).getRank().equals(player.getHand().get(1).getRank())) {
@@ -239,10 +240,16 @@ public class BlackjackGUI extends JFrame {
                 splitButton.setEnabled(false);
             }
         //ダブルダウンボタンの有効化/無効化
-        if (player.getHand().size() == 2 && isFirstTurn) {
-            doubleDownButton.setEnabled(true);
+        if (isFirstTurn) { //最初のターンかどうかを確認
+            boolean canDoubleDown = false;
+            if (playingSplitHand) { //スプリット中（playingSplitHandがtrue）なら、splitPlayerの手札を見ます。
+            	canDoubleDown = splitPlayer.getHand().size() == 2 && splitIsFirstTurn;
+            } else { //普通のプレイ中なら、playerの手札を見ます。
+            	canDoubleDown = player.getHand().size() == 2 && isFirstTurn;
+            }
+            doubleDownButton.setEnabled(canDoubleDown);
         } else {
-            doubleDownButton.setEnabled(false);
+            doubleDownButton.setEnabled(false); //最初のターンじゃないなら、絶対にダブルダウンできないので、ボタンは常に無効にします。
         }
     }
 /*
@@ -323,7 +330,8 @@ public class BlackjackGUI extends JFrame {
                 statusLabel.setText("スプリット手札：バスト！");
                 playingSplitHand = false; // もうスプリット手札のターンは終了
                 updateUI(false);
-                stand(); // 自動的に「スタンド」して次に進む
+                /*stand(); // 自動的に「スタンド」して次に進む*/
+                endGame();
             } else {
                 updateUI(false); // まだ続けられるならUIだけ更新
             }
@@ -332,7 +340,7 @@ public class BlackjackGUI extends JFrame {
             updateUI(false); // UI更新
             if (player.getHandValue() > 21) {
                 if (isSplit) { //スプリット中（isSplit == true）で最初の手札がバストしてたら、自動的にスプリット手札へ移行。
-                    statusLabel.setText("最初の手札：バスト！");
+                    statusLabel.setText("最初の手札：バスト！/スプリット手札：選んでください");
                     playingSplitHand = true; // 次はスプリット手札をプレイ
                     updateUI(false);
                 } else {
@@ -348,6 +356,7 @@ public class BlackjackGUI extends JFrame {
     	if (isSplit && !playingSplitHand) { //isSplit はプレイヤーがスプリットしているかどうか。
     										//playingSplitHand は現在、スプリット後の2枚目の手札をプレイ中か。
             playingSplitHand = true; //スプリットした 2枚目の手札に切り替える。
+            isFirstTurn = true;
             statusLabel.setText("スプリット手札に移行！");
             updateUI(false);
             return;
@@ -384,10 +393,10 @@ public class BlackjackGUI extends JFrame {
     
     //勝敗判定を行うメソッド
     private String judgeResult(int playerVal, int dealerVal) {
-        if (playerVal > 21) return "バスト";
-        if (dealerVal > 21 || playerVal > dealerVal) return "勝ち";
-        if (playerVal == dealerVal) return "引き分け";
-        return "負け";
+        if (playerVal > 21) return "バスト！あなたの負け！";
+        if (dealerVal > 21 || playerVal > dealerVal) return "あなたの勝ち！";
+        if (playerVal == dealerVal) return "引き分け！";
+        return "あなたの負け！";
     }
     
     private void concludeGame() {
@@ -447,19 +456,28 @@ public class BlackjackGUI extends JFrame {
     }
     
     private void doubleDown() {
-        // 1枚だけ引く
-        player.addCard(deck.drawCard());
-        updateUI(false);
-        // バストチェック
-        if (player.getHandValue() > 21) {
-            statusLabel.setText("バスト！あなたの負け！");
-            endGame();
-        } else {
-            // バストしてなければそのままスタンド処理
+    	if (playingSplitHand) { // スプリット中なら
+            splitPlayer.addCard(deck.drawCard()); // スプリット手札にカードを1枚引く
+            updateUI(false);
+            
+            // スプリットの手札が終わったのでディーラーターンへ
             stand();
+        } else { // 通常プレイ中
+            player.addCard(deck.drawCard()); // プレイヤーにカードを1枚引く
+            updateUI(false);
+
+            if (isSplit) {
+                // 1枚目の手札のダブルダウンが終わった → 次に2枚目に切り替える
+                playingSplitHand = true;
+                isFirstTurn = true; // 2枚目も最初のターン扱い
+                updateUI(false);
+                statusLabel.setText("スプリット2枚目：選んでください");
+            } else {
+                // スプリットしてないなら普通にターン終了
+                stand();
+            }
         }
-        // ボタン無効化（ダブルダウンは1回だけ）
-        doubleDownButton.setEnabled(false);
+        isFirstTurn = false; // どちらもダブルダウン後は通常ターン扱い
     }
 
     // main メソッド（アプリを起動）
