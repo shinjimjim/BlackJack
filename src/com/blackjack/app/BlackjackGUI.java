@@ -21,21 +21,17 @@ public class BlackjackGUI extends JFrame {
     private Deck deck;
     private Player player;
     private Dealer dealer;
-    // CUI部品
-/*
-    private JTextArea playerArea;
-    private JTextArea dealerArea;
-*/
+
     private JPanel playerPanel;
     private JPanel dealerPanel;
     private JLabel statusLabel;
     private JButton hitButton;
     private JButton standButton;
-    private JButton replayButton; // 追加する再プレイボタン
+    private JButton replayButton; 
     private JButton splitButton;
-    private JButton doubleDownButton; // ダブルダウンボタンを追加
+    private JButton doubleDownButton; 
     private JLabel playerValueLabel;
-    private JLabel dealerValueLabel; //手札の合計値表示
+    private JLabel dealerValueLabel; 
     
     private boolean isSplit = false;
     private Player splitPlayer;
@@ -56,24 +52,12 @@ public class BlackjackGUI extends JFrame {
         setSize(600, 500); // 少し広めに調整
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
-/*
-        // ディーラーの表示エリア
-        dealerArea = new JTextArea(3, 30); //手札を表示
-        dealerArea.setEditable(false); //ユーザーが書き込めないようにする
-        dealerArea.setBorder(BorderFactory.createTitledBorder("ディーラー")); //囲い枠とタイトルをつける
-        add(dealerArea, BorderLayout.NORTH);
-        // プレイヤーの表示エリア
-        playerArea = new JTextArea(3, 30); //手札を表示
-        playerArea.setEditable(false); //ユーザーが書き込めないようにする
-        playerArea.setBorder(BorderFactory.createTitledBorder("あなた")); //囲い枠とタイトルをつける
-        add(playerArea, BorderLayout.CENTER);
-*/
+
         // プレイヤーパネル
         playerPanel = new JPanel(new BorderLayout()); //BorderLayout というレイアウト方式を使って、カード表示部分と合計値を上下に分けます。
         playerPanel.setBorder(BorderFactory.createTitledBorder("あなた")); //TitledBorder でパネルに「あなた」と名前をつけています
         JPanel playerCardsPanel = new JPanel(); //playerCardsPanel：カード画像（JLabel）を横に並べて表示するエリア（FlowLayout がデフォルト）。
         playerValueLabel = new JLabel();
-        //playerValueLabel = new JLabel("合計: "); //playerValueLabel：その下に表示する「手札の合計」を示すテキスト。
         playerValueLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
         playerValueLabel.setForeground(Color.BLUE);
         JPanel playerValuePanel = new JPanel();
@@ -105,7 +89,7 @@ public class BlackjackGUI extends JFrame {
         // ボタンパネル
         JPanel buttonPanel = new JPanel(); //ボタンだけを載せる小さなパネルを作る。
         hitButton = new JButton("ヒット");
-        standButton = new JButton("スタンド"); //「ヒット」「スタンド」ボタンを生成。
+        standButton = new JButton("スタンド"); 
         splitButton = new JButton("スプリット");
         splitButton.setEnabled(false);
         doubleDownButton = new JButton("ダブルダウン");
@@ -132,13 +116,13 @@ public class BlackjackGUI extends JFrame {
         betLabel = new JLabel("ベット: " + currentBet + "＄", SwingConstants.CENTER);
         moneyPanel.add(moneyLabel);
         moneyPanel.add(betLabel);
-        bottomPanel.add(moneyPanel, BorderLayout.EAST); //右端に追加！
+        bottomPanel.add(moneyPanel, BorderLayout.EAST); //右端に追加
         
         // ボタンのイベント処理
         //-> hit() や -> stand() は、ラムダ式でそれぞれのメソッドを呼び出している。
         hitButton.addActionListener(e -> hit());
         standButton.addActionListener(e -> stand());
-        replayButton.addActionListener(e -> replay()); // 再プレイボタンのイベント
+        replayButton.addActionListener(e -> replay()); 
         splitButton.addActionListener(e -> split());
         doubleDownButton.addActionListener(e -> doubleDown());
         
@@ -172,11 +156,10 @@ public class BlackjackGUI extends JFrame {
         dealer.addCard(deck.drawCard());
         dealer.addCard(deck.drawCard());
         
-        /*updateUI(false); // 新しいカードを表示　ディーラーの2枚目のカードを隠す*/
         hitButton.setEnabled(true);
         standButton.setEnabled(true);
         splitButton.setEnabled(false);
-        replayButton.setEnabled(false); // 再プレイボタンを無効にする
+        replayButton.setEnabled(false); 
         doubleDownButton.setEnabled(player.getHand().size() == 2);
         
         statusLabel.setText("選んでください");
@@ -194,18 +177,12 @@ public class BlackjackGUI extends JFrame {
         boolean dealerBJ = (dealer.getHandValue() == 21 && dealer.getHand().size() == 2);
         
         if (playerBJ || dealerBJ) {
-            concludeGame(); //勝敗処理メソッド（後述）
+            concludeGame(); 
         } else {
         	updateUI(false);
         }
     }
-/*
-    // GUIに手札を表示する
-    private void updateUI() {
-        playerArea.setText(getHandString(player)); //player の持っているカードを getHandString() で文字列にする
-        dealerArea.setText(getHandString(dealer, false)); // 1枚だけ見せる　false を渡して、「2枚目以降は ?? にする」ようにしてる
-    }
-*/
+
     private void updateUI(boolean showDealerCards) { //プレイヤー・ディーラーのカードや点数の表示を最新の状態にして、必要に応じて「スプリット」ボタンの有効/無効も更新する。
     	if (playerPanel == null || dealerPanel == null || playerValueLabel == null || dealerValueLabel == null) {
     		//nullチェックをすることで、プログラムがクラッシュするのを防いでいる。
@@ -220,6 +197,7 @@ public class BlackjackGUI extends JFrame {
             System.err.println("カード表示パネルが初期化されていません！");
             return;
         }
+        
         // プレイヤーとディーラーのカード画像を更新
         playerCardsPanel.removeAll();
         dealerCardsPanel.removeAll(); //新しいカードを表示するために、パネルの中身を一旦クリア
@@ -261,6 +239,7 @@ public class BlackjackGUI extends JFrame {
             } else {
                 splitButton.setEnabled(false);
             }
+        
         //ダブルダウンボタンの有効化/無効化
         if (isFirstTurn) { //最初のターンかどうかを確認
             boolean canDoubleDown = false;
@@ -274,29 +253,7 @@ public class BlackjackGUI extends JFrame {
             doubleDownButton.setEnabled(false); //最初のターンじゃないなら、絶対にダブルダウンできないので、ボタンは常に無効にします。
         }
     }
-/*
-    // 手札をテキストにする
-    private String getHandString(Player p) {
-        return getHandString(p, true);
-    }
-    // プレイヤーまたはディーラーの手札（カード）を、画面に表示するための文字列に変換する処理
-    private String getHandString(Player p, boolean showAll) {
-    	// showAll = true：全部のカード＆合計値を表示（プレイヤー or ゲーム終了後のディーラー）
-    	// showAll = false：2枚目以降を隠す（ディーラー用）
-        StringBuilder sb = new StringBuilder(); //StringBuilder は文字列を連結して効率的に作るためのクラス（+= より速い）
-        for (int i = 0; i < p.getHand().size(); i++) {
-            if (!showAll && i == 1) { //2枚目（i == 1）かつ showAll が false のとき
-                sb.append("[??] "); //ディーラーの2枚目のカードを隠す」
-            } else {
-                sb.append(p.getHand().get(i).toString()).append(" "); //それ以外のカードは .toString() でカード内容を表示
-            }
-        }
-        if (showAll) { //showAll == true のときだけ、カードの合計点数を表示
-            sb.append("（合計: ").append(p.getHandValue()).append("）");
-        }
-        return sb.toString();
-    }
-*/
+
     private JLabel createCardImageLabel(Card card) { //Card オブジェクトを受け取って、それに対応するカード画像を表示する JLabel を返すメソッド
         try { //try と catch は、「例外処理（エラー対策）」のための仕組みです。
             // カード画像ファイル名を作成
@@ -315,20 +272,11 @@ public class BlackjackGUI extends JFrame {
             return new JLabel(scaledIcon); //JLabel に画像を埋め込んで返します。        
 
         } catch (Exception e) { //こういう構文
-            e.printStackTrace(); //// エラー内容をコンソールに表示するという意味
+            e.printStackTrace(); // エラー内容をコンソールに表示するという意味
             return new JLabel("カード画像がありません");
         }
     }
-/*
-    private String getHandString(Player p) {
-        StringBuilder sb = new StringBuilder();
-        for (Card card : p.getHand()) {
-            sb.append(card.toString()).append(" ");
-        }
-        sb.append("（合計: ").append(p.getHandValue()).append("）");
-        return sb.toString();
-    }
-*/
+
     //トランプの裏面画像を表示するJLabel を作るためのもの
     private JLabel createBackImageLabel() {
         try {
@@ -385,13 +333,12 @@ public class BlackjackGUI extends JFrame {
             updateUI(false);
             return;
         }
+    	
     	//ディーラーの処理
         while (dealer.getHandValue() < 17) {
             dealer.addCard(deck.drawCard());
         }
-/*
-        dealerArea.setText(getHandString(dealer, true)); //第二引数が true のときは全カード＋点数を表示する仕様
-*/
+
         updateUI(true); // ディーラーのカード全公開
         Result();
         endGame(); //ボタンの無効化など終了処理を行います。
@@ -427,21 +374,17 @@ public class BlackjackGUI extends JFrame {
     }
     
     private void concludeGame() {
-    	System.out.println("concludeGame() が呼び出されました");
 
         boolean playerBJ = (player.getHandValue() == 21 && player.getHand().size() == 2);
         boolean dealerBJ = (dealer.getHandValue() == 21 && dealer.getHand().size() == 2);
 
         if (playerBJ && dealerBJ) {
-        	System.out.println("両者ブラックジャックの処理を実行します。");
             statusLabel.setText("引き分け（両者ブラックジャック）！");
             statusLabel.repaint();
         } else if (playerBJ) {
-        	System.out.println("プレイヤーブラックジャックの処理を実行します。");
             statusLabel.setText("あなたのブラックジャック！勝利！");
             statusLabel.repaint();
         } else if (dealerBJ) {
-        	System.out.println("ディーラーブラックジャックの処理を実行します。");
             statusLabel.setText("ディーラーのブラックジャック。あなたの負け！");
             statusLabel.repaint();
         } 
@@ -546,8 +489,6 @@ public class BlackjackGUI extends JFrame {
 
     // main メソッド（アプリを起動）
     public static void main(String[] args) {
-        /*SwingUtilities.invokeLater(() -> new BlackjackGUI());*/ 
-    	//SwingUtilities.invokeLater() を使うことで UI処理を安全に別スレッドで実行してる
     	SwingUtilities.invokeLater(BlackjackGUI::new);
     	//BlackjackGUI::newは() -> new BlackjackGUI()と同じ意味
     }
