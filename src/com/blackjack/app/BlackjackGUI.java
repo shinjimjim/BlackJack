@@ -3,6 +3,7 @@ package com.blackjack.app;
 import java.awt.BorderLayout; //上下左右に部品を配置
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.GridLayout;
 import java.awt.Image;
 import java.util.List;
 
@@ -42,6 +43,11 @@ public class BlackjackGUI extends JFrame {
     
     private boolean isFirstTurn = true;
     private boolean splitIsFirstTurn = true; // ← スプリット後用のfirstTurnフラグ
+    
+    private int playerMoney = 1000; // 初期所持金
+    private int currentBet = 100;   // 現在のベット額
+    private JLabel moneyLabel;      // 所持金表示ラベル
+    private JLabel betLabel;        // ベット額表示ラベル
     
     // コンストラクタでウィンドウとゲームの準備
     public BlackjackGUI() {
@@ -121,6 +127,13 @@ public class BlackjackGUI extends JFrame {
         bottomPanel.add(replayButton, BorderLayout.NORTH); // 再プレイボタンを追加
         add(bottomPanel, BorderLayout.SOUTH); //下部パネル全体（ボタン＋ラベル）を、ウィンドウの下に配置。
         
+        JPanel moneyPanel = new JPanel(new GridLayout(2, 1));
+        moneyLabel = new JLabel("所持金: " + playerMoney + "＄", SwingConstants.CENTER);
+        betLabel = new JLabel("ベット: " + currentBet + "＄", SwingConstants.CENTER);
+        moneyPanel.add(moneyLabel);
+        moneyPanel.add(betLabel);
+        bottomPanel.add(moneyPanel, BorderLayout.EAST); //右端に追加！
+        
         // ボタンのイベント処理
         //-> hit() や -> stand() は、ラムダ式でそれぞれのメソッドを呼び出している。
         hitButton.addActionListener(e -> hit());
@@ -145,6 +158,14 @@ public class BlackjackGUI extends JFrame {
         playingSplitHand = false;
         isFirstTurn = true;
 
+        // ベット処理
+        if (playerMoney < currentBet) {
+            currentBet = playerMoney;
+        }
+        playerMoney -= currentBet;
+
+        updateMoneyLabels();
+        
         // 初期カード配布
         player.addCard(deck.drawCard());
         player.addCard(deck.drawCard());
@@ -157,6 +178,7 @@ public class BlackjackGUI extends JFrame {
         splitButton.setEnabled(false);
         replayButton.setEnabled(false); // 再プレイボタンを無効にする
         doubleDownButton.setEnabled(player.getHand().size() == 2);
+        
         statusLabel.setText("選んでください");
         
         // スプリットボタンの有効/無効判定を追加（再プレイ時にも必要）
@@ -331,6 +353,7 @@ public class BlackjackGUI extends JFrame {
                 playingSplitHand = false; // もうスプリット手札のターンは終了
                 updateUI(true);
                 Result();
+                updateMoneyLabels();  // 所持金を表示更新
                 endGame();
             } else {
                 updateUI(false); // まだ続けられるならUIだけ更新
@@ -345,6 +368,7 @@ public class BlackjackGUI extends JFrame {
                     updateUI(false);
                 } else {
                     statusLabel.setText("バスト！あなたの負け！");
+                    updateMoneyLabels();  // 所持金を表示更新
                     endGame(); // ゲーム終了
                 }
             }
@@ -432,6 +456,29 @@ public class BlackjackGUI extends JFrame {
         splitButton.setEnabled(false);
         replayButton.setEnabled(true); // ゲーム終了後に再プレイボタンを有効にする
         doubleDownButton.setEnabled(false);
+        
+        int playerValue = playingSplitHand ? splitPlayer.getHandValue() : player.getHandValue();
+        int dealerValue = dealer.getHandValue();
+        
+        if (player.getHandValue() == 21 && player.getHand().size() == 2) {
+        	playerMoney += currentBet * 2.5;
+        } else if (playerValue > 21) {
+        	playerMoney -= currentBet;
+        } else if (dealerValue > 21 || playerValue > dealerValue) {
+            playerMoney += currentBet * 2;
+        } else if (playerValue == dealerValue) {
+            playerMoney += currentBet;   
+        } 
+        
+        updateMoneyLabels();
+        replayButton.setEnabled(true);
+
+        if (playerMoney <= 0) {
+            statusLabel.setText("所持金がなくなりました。ゲームオーバー！");
+            hitButton.setEnabled(false);
+            standButton.setEnabled(false);
+            replayButton.setEnabled(false);
+        }
     }
     
     //ゲームを再スタートするためのメソッド。
@@ -459,6 +506,15 @@ public class BlackjackGUI extends JFrame {
     }
     
     private void doubleDown() {
+    	if (playerMoney >= currentBet) {
+            playerMoney -= currentBet;   // 追加で同額ベット
+            currentBet *= 2;             // 現在のベット額を2倍にする
+            updateMoneyLabels();         // 表示更新
+        } else {
+            statusLabel.setText("所持金不足でダブルダウンできません");
+            return;
+        }
+    	
     	if (playingSplitHand) { // スプリット中なら
             splitPlayer.addCard(deck.drawCard()); // スプリット手札にカードを1枚引く
             updateUI(false);
@@ -481,6 +537,11 @@ public class BlackjackGUI extends JFrame {
             }
         }
         isFirstTurn = false; // どちらもダブルダウン後は通常ターン扱い
+    }
+
+    private void updateMoneyLabels() {
+        moneyLabel.setText("所持金: " + playerMoney + "＄");
+        betLabel.setText("ベット: " + currentBet + "＄");
     }
 
     // main メソッド（アプリを起動）
