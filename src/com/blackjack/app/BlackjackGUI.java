@@ -329,8 +329,8 @@ public class BlackjackGUI extends JFrame {
             if (splitPlayer.getHandValue() > 21) {
                 statusLabel.setText("スプリット手札：バスト！");
                 playingSplitHand = false; // もうスプリット手札のターンは終了
-                updateUI(false);
-                /*stand(); // 自動的に「スタンド」して次に進む*/
+                updateUI(true);
+                Result();
                 endGame();
             } else {
                 updateUI(false); // まだ続けられるならUIだけ更新
@@ -369,8 +369,20 @@ public class BlackjackGUI extends JFrame {
         dealerArea.setText(getHandString(dealer, true)); //第二引数が true のときは全カード＋点数を表示する仕様
 */
         updateUI(true); // ディーラーのカード全公開
-        
-        //勝敗判定の準備
+        Result();
+        endGame(); //ボタンの無効化など終了処理を行います。
+    }
+    
+    //勝敗判定を行うメソッド
+    private String judgeResult(int playerVal, int dealerVal) {
+        if (playerVal > 21) return "バスト！あなたの負け！";
+        if (dealerVal > 21 || playerVal > dealerVal) return "あなたの勝ち！";
+        if (playerVal == dealerVal) return "引き分け！";
+        return "あなたの負け！";
+    }
+    
+    private void Result() {
+    	//勝敗判定の準備
         String result = "";
         
         //ディーラーの点数と、プレイヤー（通常手札）の点数を取得。
@@ -388,15 +400,6 @@ public class BlackjackGUI extends JFrame {
         
         //ゲーム終了処理
         statusLabel.setText(result); //勝敗結果を画面に表示。
-        endGame(); //ボタンの無効化など終了処理を行います。
-    }
-    
-    //勝敗判定を行うメソッド
-    private String judgeResult(int playerVal, int dealerVal) {
-        if (playerVal > 21) return "バスト！あなたの負け！";
-        if (dealerVal > 21 || playerVal > dealerVal) return "あなたの勝ち！";
-        if (playerVal == dealerVal) return "引き分け！";
-        return "あなたの負け！";
     }
     
     private void concludeGame() {
