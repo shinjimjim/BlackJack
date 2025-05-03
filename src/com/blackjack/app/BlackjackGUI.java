@@ -391,8 +391,8 @@ public class BlackjackGUI extends JFrame {
         updateUI(true); // ディーラーの手札を公開
         endGame();
     }
-    
-    // 勝敗決定後の処理
+/*    
+   // 勝敗決定後の処理
     private void endGame() {
         hitButton.setEnabled(false);
         standButton.setEnabled(false); //ボタンを無効（＝押せなく）する命令。
@@ -423,9 +423,60 @@ public class BlackjackGUI extends JFrame {
             replayButton.setEnabled(false);
         }
     }
-    
+*/
+    private void endGame() {
+        hitButton.setEnabled(false);
+        standButton.setEnabled(false);
+        splitButton.setEnabled(false);
+        replayButton.setEnabled(true);
+        doubleDownButton.setEnabled(false);
+
+        int totalWinnings = 0;
+
+        if (isSplit) {
+            // 両方の手札を評価
+            int playerValue1 = player.getHandValue();
+            int playerValue2 = splitPlayer.getHandValue();
+            int dealerValue = dealer.getHandValue();
+
+            totalWinnings += calculateWinnings(playerValue1, dealerValue);
+            totalWinnings += calculateWinnings(playerValue2, dealerValue);
+
+        } else {
+            int playerValue = player.getHandValue();
+            int dealerValue = dealer.getHandValue();
+            
+            totalWinnings += calculateWinnings(playerValue, dealerValue);
+        }
+
+        playerMoney += totalWinnings;
+        updateMoneyLabels();
+
+        if (playerMoney <= 0) {
+            statusLabel.setText("所持金がなくなりました。ゲームオーバー！");
+            hitButton.setEnabled(false);
+            standButton.setEnabled(false);
+            replayButton.setEnabled(false);
+        }
+    }
+
+    private int calculateWinnings(int playerValue, int dealerValue) {
+        if (playerValue > 21) {
+            return 0; // バスト：何も返さない（ベット没収）
+        } else if (playerValue == 21 && player.getHand().size() == 2) {
+            return (int)(currentBet * 2.5);
+        } else if (dealerValue > 21 || playerValue > dealerValue) {
+            return currentBet * 2;
+        } else if (playerValue == dealerValue) {
+            return currentBet; // 引き分け：ベット返却
+        } else {
+            return 0; // 負け
+        }
+    }
+
     //ゲームを再スタートするためのメソッド。
     private void replay() {
+    	currentBet = 100; // ★ベット額を初期値にリセット！
         initializeGame(); // ゲームをリセット
     }
     
