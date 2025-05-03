@@ -391,39 +391,7 @@ public class BlackjackGUI extends JFrame {
         updateUI(true); // ディーラーの手札を公開
         endGame();
     }
-/*    
-   // 勝敗決定後の処理
-    private void endGame() {
-        hitButton.setEnabled(false);
-        standButton.setEnabled(false); //ボタンを無効（＝押せなく）する命令。
-        splitButton.setEnabled(false);
-        replayButton.setEnabled(true); // ゲーム終了後に再プレイボタンを有効にする
-        doubleDownButton.setEnabled(false);
-        
-        int playerValue = playingSplitHand ? splitPlayer.getHandValue() : player.getHandValue();
-        int dealerValue = dealer.getHandValue();
-        
-        if (player.getHandValue() == 21 && player.getHand().size() == 2) {
-        	playerMoney += currentBet * 2.5;
-        } else if (playerValue > 21) {
-        	playerMoney -= currentBet;
-        } else if (dealerValue > 21 || playerValue > dealerValue) {
-            playerMoney += currentBet * 2;
-        } else if (playerValue == dealerValue) {
-            playerMoney += currentBet;   
-        } 
-        
-        updateMoneyLabels();
-        replayButton.setEnabled(true);
 
-        if (playerMoney <= 0) {
-            statusLabel.setText("所持金がなくなりました。ゲームオーバー！");
-            hitButton.setEnabled(false);
-            standButton.setEnabled(false);
-            replayButton.setEnabled(false);
-        }
-    }
-*/
     private void endGame() {
         hitButton.setEnabled(false);
         standButton.setEnabled(false);
@@ -433,23 +401,23 @@ public class BlackjackGUI extends JFrame {
 
         int totalWinnings = 0;
 
-        if (isSplit) {
+        if (isSplit) { //スプリットしているときは、2つの手札それぞれとディーラーの手札を比較。
             // 両方の手札を評価
             int playerValue1 = player.getHandValue();
             int playerValue2 = splitPlayer.getHandValue();
             int dealerValue = dealer.getHandValue();
-
+            //calculateWinnings() を2回呼び出し、それぞれの結果（配当）を totalWinnings に加算。
             totalWinnings += calculateWinnings(playerValue1, dealerValue);
             totalWinnings += calculateWinnings(playerValue2, dealerValue);
-
-        } else {
+        } else { //スプリットしていない通常のプレイなら、1回だけ勝敗を判定して賞金を加算。
             int playerValue = player.getHandValue();
             int dealerValue = dealer.getHandValue();
             
             totalWinnings += calculateWinnings(playerValue, dealerValue);
         }
 
-        playerMoney += totalWinnings;
+        playerMoney += totalWinnings; //勝敗によって得られた賞金を、プレイヤーの所持金に加えます。
+        //UI更新とゲームオーバー判定
         updateMoneyLabels();
 
         if (playerMoney <= 0) {
@@ -460,7 +428,7 @@ public class BlackjackGUI extends JFrame {
         }
     }
 
-    private int calculateWinnings(int playerValue, int dealerValue) {
+    private int calculateWinnings(int playerValue, int dealerValue) { //プレイヤーとディーラーの手札の合計値から、賞金を計算する関数
         if (playerValue > 21) {
             return 0; // バスト：何も返さない（ベット没収）
         } else if (playerValue == 21 && player.getHand().size() == 2) {
